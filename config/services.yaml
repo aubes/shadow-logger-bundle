@@ -1,0 +1,26 @@
+services:
+    Aubes\ShadowLoggerBundle\Logger\ShadowProcessor: ~
+    Aubes\ShadowLoggerBundle\Encoder\Encoder: ~
+
+    Aubes\ShadowLoggerBundle\Transformer\HashTransformer:
+        arguments:
+            $encoder: '@Aubes\ShadowLoggerBundle\Encoder\Encoder'
+        tags:
+            - { name: 'shadow_logger.transformer', alias: 'hash' }
+
+    Aubes\ShadowLoggerBundle\Transformer\IpTransformer:
+        tags:
+            - { name: 'shadow_logger.transformer', alias: 'ip' }
+
+    Aubes\ShadowLoggerBundle\Transformer\RemoveTransformer:
+        tags:
+            - { name: 'shadow_logger.transformer', alias: 'remove' }
+
+    Aubes\ShadowLoggerBundle\Transformer\StringTransformer:
+        tags:
+            - { name: 'shadow_logger.transformer', alias: 'string' }
+
+    Aubes\ShadowLoggerBundle\Visitor\ArrayKeyVisitor: ~
+    Aubes\ShadowLoggerBundle\Visitor\PropertyAccessorVisitor:
+        arguments:
+            $accessor: '@property_accessor'
