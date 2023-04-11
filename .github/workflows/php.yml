@@ -1,4 +1,4 @@
-name: PHP Shadow Logger Bundle
+name: CI
 
 on:
   push:

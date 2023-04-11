@@ -22,7 +22,7 @@ class Configuration implements ConfigurationInterface
         $rootNode
             ->children()
                 ->scalarNode('debug')->defaultFalse()->info('Debug mode: add debug information when an exception occurred')->end()
-                ->scalarNode('strict')->defaultTrue()->info('Strict mode: remove value when an exception occured')->end()
+                ->scalarNode('strict')->defaultTrue()->info('Strict mode: remove value when an exception occurred')->end()
                 ->arrayNode('encoder')
                     ->children()
                         ->scalarNode('algo')->defaultValue('sha256')->end()

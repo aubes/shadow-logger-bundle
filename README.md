@@ -2,7 +2,7 @@
 
 ![CI](https://github.com/aubes/shadow-logger-bundle/actions/workflows/php.yml/badge.svg)
 
-This Symfony bundle provide a monolog processor to transform log data, in order to respect GDPR or to anonymize sensitive data.
+This Symfony bundle provides a monolog processor to transform log data, in order to respect GDPR or to anonymize sensitive data.
 
 It allows Ip anonymization, encoding or removing data in the log.
 
