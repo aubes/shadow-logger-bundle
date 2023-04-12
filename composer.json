@@ -2,7 +2,7 @@
     "name": "aubes/shadow-logger-bundle",
     "type": "symfony-bundle",
     "description": "Monolog processor for anonymization",
-    "keywords": ["log", "anonymise", "monolog", "symfony", "bundle"],
+    "keywords": ["log", "anonymise", "gdpr", "monolog", "symfony", "bundle"],
     "license": "MIT",
     "authors": [
         {

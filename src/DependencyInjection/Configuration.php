@@ -30,6 +30,7 @@ class Configuration implements ConfigurationInterface
                         ->booleanNode('binary')->defaultFalse()->end()
                     ->end()
                 ->end()
+                ->scalarNode('encryptor')->end()
                 ->arrayNode('channels')
                     ->info('Logging channel list the ShadowProcessor should be pushed to')
                     ->scalarPrototype()->end()

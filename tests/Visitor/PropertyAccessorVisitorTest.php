@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Aubes\ShadowLoggerBundle\Tests\Visitor;
 
+use Aubes\ShadowLoggerBundle\Logger\TransformerException;
 use Aubes\ShadowLoggerBundle\Visitor\PropertyAccessorVisitor;
 use PHPUnit\Framework\TestCase;
 use Prophecy\Argument;
@@ -37,7 +38,7 @@ class PropertyAccessorVisitorTest extends TestCase
         $this->assertFalse($visitor->has($record, '[field]'));
     }
 
-    public function testException()
+    public function testGetException()
     {
         $accessor = $this->prophesize(PropertyAccessorInterface::class);
         $accessor->getValue(Argument::any(), Argument::any())->willThrow(\RuntimeException::class);
@@ -47,5 +48,18 @@ class PropertyAccessorVisitorTest extends TestCase
         $record = [];
 
         $this->assertFalse($visitor->has($record, '[field]'));
+    }
+
+    public function testSetException()
+    {
+        $accessor = $this->prophesize(PropertyAccessorInterface::class);
+        $accessor->setValue(Argument::any(), Argument::any(), Argument::any())->willThrow(\RuntimeException::class);
+
+        $visitor = new PropertyAccessorVisitor($accessor->reveal());
+
+        $record = [];
+
+        $this->expectException(TransformerException::class);
+        $visitor->set($record, '[field]', 'value');
     }
 }

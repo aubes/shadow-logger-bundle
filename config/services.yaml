@@ -8,6 +8,10 @@ services:
         tags:
             - { name: 'shadow_logger.transformer', alias: 'hash' }
 
+    Aubes\ShadowLoggerBundle\Transformer\EncryptTransformer:
+        tags:
+            - { name: 'shadow_logger.transformer', alias: 'encrypt' }
+
     Aubes\ShadowLoggerBundle\Transformer\IpTransformer:
         tags:
             - { name: 'shadow_logger.transformer', alias: 'ip' }

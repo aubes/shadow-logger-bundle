@@ -7,6 +7,7 @@ namespace Aubes\ShadowLoggerBundle\DependencyInjection;
 use Aubes\ShadowLoggerBundle\Encoder\Encoder;
 use Aubes\ShadowLoggerBundle\Logger\DataTransformer;
 use Aubes\ShadowLoggerBundle\Logger\ShadowProcessor;
+use Aubes\ShadowLoggerBundle\Transformer\EncryptTransformer;
 use Aubes\ShadowLoggerBundle\Visitor\ArrayKeyVisitor;
 use Aubes\ShadowLoggerBundle\Visitor\PropertyAccessorVisitor;
 use Symfony\Component\Config\FileLocator;
@@ -16,6 +17,9 @@ use Symfony\Component\DependencyInjection\Loader;
 use Symfony\Component\DependencyInjection\Reference;
 use Symfony\Component\HttpKernel\DependencyInjection\Extension;
 
+/**
+ * @SuppressWarnings(PMD.CouplingBetweenObjects)
+ */
 class ShadowLoggerExtension extends Extension
 {
     /**
@@ -29,8 +33,9 @@ class ShadowLoggerExtension extends Extension
         $loader = new Loader\YamlFileLoader($container, new FileLocator(__DIR__ . '/../../config'));
         $loader->load('services.yaml');
 
-        $this->loadProcessor($config, $container);
         $this->loadEncoder($config, $container);
+        $this->loadEncryptor($config, $container);
+        $this->loadProcessor($config, $container);
     }
 
     protected function loadProcessor(array $config, ContainerBuilder $container): void
@@ -52,6 +57,18 @@ class ShadowLoggerExtension extends Extension
         $processor->setArgument('$debug', $config['debug']);
 
         $this->loadTransformers($config, $container, $processor);
+    }
+
+    public function loadEncryptor(array $config, ContainerBuilder $container): void
+    {
+        if (!isset($config['encryptor'])) {
+            $container->removeDefinition(EncryptTransformer::class);
+
+            return;
+        }
+
+        $encryptTransformer = $container->getDefinition(EncryptTransformer::class);
+        $encryptTransformer->setArgument('$encryptor', new Reference($config['encryptor']));
     }
 
     /**
