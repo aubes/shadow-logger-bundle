@@ -19,6 +19,12 @@ class LogRecordShadowProcessorTest extends TestCase
 
     public function testProcessor()
     {
+        if (!\class_exists(LogRecord::class)) {
+            $this->addToAssertionCount(1);
+
+            return;
+        }
+
         $processor = new LogRecordShadowProcessor(false);
 
         $dataTransformer = $this->prophesize(DataTransformer::class);
@@ -35,6 +41,12 @@ class LogRecordShadowProcessorTest extends TestCase
 
     public function testProcessorDebug()
     {
+        if (!\class_exists(LogRecord::class)) {
+            $this->addToAssertionCount(1);
+
+            return;
+        }
+
         $processor = new LogRecordShadowProcessor(true);
 
         $exception = new TransformerException('field', 'Message');
