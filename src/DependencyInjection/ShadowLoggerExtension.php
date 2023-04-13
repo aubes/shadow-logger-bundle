@@ -6,10 +6,12 @@ namespace Aubes\ShadowLoggerBundle\DependencyInjection;
 
 use Aubes\ShadowLoggerBundle\Encoder\Encoder;
 use Aubes\ShadowLoggerBundle\Logger\DataTransformer;
+use Aubes\ShadowLoggerBundle\Logger\LogRecordShadowProcessor;
 use Aubes\ShadowLoggerBundle\Logger\ShadowProcessor;
 use Aubes\ShadowLoggerBundle\Transformer\EncryptTransformer;
 use Aubes\ShadowLoggerBundle\Visitor\ArrayKeyVisitor;
 use Aubes\ShadowLoggerBundle\Visitor\PropertyAccessorVisitor;
+use Monolog\LogRecord;
 use Symfony\Component\Config\FileLocator;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Definition;
@@ -45,6 +47,11 @@ class ShadowLoggerExtension extends Extension
         }
 
         $processor = $container->getDefinition(ShadowProcessor::class);
+
+        // Compatibility with Monolog >= 3.0
+        if (\class_exists(LogRecord::class) && \method_exists(LogRecord::class, 'with')) {
+            $processor->setClass(LogRecordShadowProcessor::class);
+        }
 
         foreach ($config['channels'] as $channel) {
             $processor->addTag('monolog.processor', ['channel' => $channel]);
