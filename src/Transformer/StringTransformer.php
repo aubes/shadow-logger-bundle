@@ -12,10 +12,10 @@ class StringTransformer implements TransformerInterface
             return '';
         }
 
-        if (!\is_scalar($data) && !\method_exists($data, '__toString')) {
-            throw new \InvalidArgumentException('Data is not stringable');
+        if (\is_scalar($data) || (\is_object($data) && \method_exists($data, '__toString'))) {
+            return (string) $data;
         }
 
-        return (string) $data;
+        throw new \InvalidArgumentException('Data is not stringable');
     }
 }
