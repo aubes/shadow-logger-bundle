@@ -1,6 +1,9 @@
 # Shadow Logger Bundle
 
 ![CI](https://github.com/aubes/shadow-logger-bundle/actions/workflows/php.yml/badge.svg)
+[![Latest Stable Version](https://img.shields.io/packagist/v/aubes/shadow-logger-bundle)](https://packagist.org/packages/aubes/shadow-logger-bundle)
+[![License](https://img.shields.io/packagist/l/aubes/shadow-logger-bundle)](https://packagist.org/packages/aubes/shadow-logger-bundle)
+[![PHP Version](https://img.shields.io/packagist/dependency-v/aubes/shadow-logger-bundle/php)](https://packagist.org/packages/aubes/shadow-logger-bundle)
 
 This Symfony bundle provides a Monolog processor to transform log data in order to respect GDPR or anonymize sensitive data.
 
