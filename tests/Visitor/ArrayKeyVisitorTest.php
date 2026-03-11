@@ -9,7 +9,7 @@ use PHPUnit\Framework\TestCase;
 
 class ArrayKeyVisitorTest extends TestCase
 {
-    public function testFieldExist()
+    public function testFieldExist(): void
     {
         $visitor = new ArrayKeyVisitor();
 
@@ -22,7 +22,7 @@ class ArrayKeyVisitorTest extends TestCase
         $this->assertSame('data-change', $visitor->get($record, 'field'));
     }
 
-    public function testFieldNotExist()
+    public function testFieldNotExist(): void
     {
         $visitor = new ArrayKeyVisitor();
 

@@ -35,7 +35,7 @@ final class PropertyAccessorVisitor implements LoggerVisitorInterface
         try {
             $this->accessor->setValue($record, $field, $value);
         } catch (\RuntimeException $e) {
-            throw new TransformerException($field, $e->getMessage(), $e->getCode(), $e->getPrevious());
+            throw new TransformerException($field, $e->getMessage(), (int) $e->getCode(), $e->getPrevious());
         }
     }
 }

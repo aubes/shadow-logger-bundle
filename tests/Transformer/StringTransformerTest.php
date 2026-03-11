@@ -9,7 +9,7 @@ use PHPUnit\Framework\TestCase;
 
 class StringTransformerTest extends TestCase
 {
-    public function testTransform()
+    public function testTransform(): void
     {
         $transformer = new StringTransformer();
         $this->assertSame('data', $transformer->transform('data'));
@@ -26,7 +26,7 @@ class StringTransformerTest extends TestCase
         }));
     }
 
-    public function testTransformNotStringable()
+    public function testTransformNotStringable(): void
     {
         $transformer = new StringTransformer();
 

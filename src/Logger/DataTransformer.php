@@ -4,10 +4,12 @@ declare(strict_types=1);
 
 namespace Aubes\ShadowLoggerBundle\Logger;
 
+use Aubes\ShadowLoggerBundle\Transformer\TransformerInterface;
 use Aubes\ShadowLoggerBundle\Visitor\LoggerVisitorInterface;
 
-class DataTransformer
+final class DataTransformer
 {
+    /** @param list<TransformerInterface> $transformers */
     public function __construct(
         private readonly string $field,
         private readonly LoggerVisitorInterface $visitor,
@@ -22,10 +24,12 @@ class DataTransformer
             return;
         }
 
+        /** @var mixed $value */
         $value = $this->visitor->get($record, $this->field);
 
         try {
             foreach ($this->transformers as $transformer) {
+                /** @var mixed $value */
                 $value = $transformer->transform($value);
             }
         } catch (\Exception $e) {
@@ -33,7 +37,7 @@ class DataTransformer
                 $value = null;
             }
 
-            throw new TransformerException($this->field, $e->getMessage(), $e->getCode(), $e);
+            throw new TransformerException($this->field, $e->getMessage(), (int) $e->getCode(), $e);
         } finally {
             $this->visitor->set($record, $this->field, $value);
         }

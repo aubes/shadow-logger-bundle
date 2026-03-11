@@ -9,76 +9,69 @@ use Aubes\ShadowLoggerBundle\Logger\TransformerException;
 use Aubes\ShadowLoggerBundle\Transformer\TransformerInterface;
 use Aubes\ShadowLoggerBundle\Visitor\LoggerVisitorInterface;
 use PHPUnit\Framework\TestCase;
-use Prophecy\Argument;
-use Prophecy\PhpUnit\ProphecyTrait;
 
 class DataTransformerTest extends TestCase
 {
-    use ProphecyTrait;
-
-    public function testTransform()
+    public function testTransform(): void
     {
-        $visitor = $this->prophesize(LoggerVisitorInterface::class);
-        $visitor->has(Argument::any(), Argument::exact('field'))->shouldBeCalledOnce()->willReturn(true);
-        $visitor->get(Argument::any(), Argument::exact('field'))->shouldBeCalledOnce()->willReturn('data');
-        $visitor->set(Argument::any(), Argument::exact('field'), Argument::exact('data-change'))->shouldBeCalledOnce();
+        $visitor = $this->createMock(LoggerVisitorInterface::class);
+        $visitor->expects($this->once())->method('has')->with($this->anything(), 'field')->willReturn(true);
+        $visitor->expects($this->once())->method('get')->with($this->anything(), 'field')->willReturn('data');
+        $visitor->expects($this->once())->method('set')->with($this->anything(), 'field', 'data-change');
 
-        $transformer = $this->prophesize(TransformerInterface::class);
-        $transformer->transform(Argument::exact('data'))->willReturn('data-change');
+        $transformer = $this->createMock(TransformerInterface::class);
+        $transformer->method('transform')->with('data')->willReturn('data-change');
 
         $record = [];
 
-        $dataTransformer = new DataTransformer('field', $visitor->reveal(), [$transformer->reveal()], true);
+        $dataTransformer = new DataTransformer('field', $visitor, [$transformer], true);
         $dataTransformer->transform($record);
     }
 
-    public function testTransformFieldNotExist()
+    public function testTransformFieldNotExist(): void
     {
-        $visitor = $this->prophesize(LoggerVisitorInterface::class);
-        $visitor->has(Argument::any(), Argument::any())->shouldBeCalledOnce()->willReturn(false);
-        $visitor->get(Argument::any(), Argument::any())->shouldNotBeCalled();
-        $visitor->set(Argument::any(), Argument::any(), Argument::any())->shouldNotBeCalled();
-
-        $transformer = $this->prophesize(TransformerInterface::class);
-        $transformer->transform(Argument::exact('data'))->willReturn('data-change');
+        $visitor = $this->createMock(LoggerVisitorInterface::class);
+        $visitor->expects($this->once())->method('has')->willReturn(false);
+        $visitor->expects($this->never())->method('get');
+        $visitor->expects($this->never())->method('set');
 
         $record = [];
 
-        $dataTransformer = new DataTransformer('field', $visitor->reveal(), [$transformer->reveal()], true);
+        $dataTransformer = new DataTransformer('field', $visitor, [], true);
         $dataTransformer->transform($record);
     }
 
-    public function testTransformExceptionNotStrict()
+    public function testTransformExceptionNotStrict(): void
     {
-        $visitor = $this->prophesize(LoggerVisitorInterface::class);
-        $visitor->has(Argument::any(), Argument::exact('field'))->shouldBeCalledOnce()->willReturn(true);
-        $visitor->get(Argument::any(), Argument::exact('field'))->shouldBeCalledOnce()->willReturn('data');
-        $visitor->set(Argument::any(), Argument::exact('field'), Argument::exact('data'))->shouldBeCalledOnce();
+        $visitor = $this->createMock(LoggerVisitorInterface::class);
+        $visitor->expects($this->once())->method('has')->willReturn(true);
+        $visitor->expects($this->once())->method('get')->willReturn('data');
+        $visitor->expects($this->once())->method('set')->with($this->anything(), 'field', 'data');
 
-        $transformer = $this->prophesize(TransformerInterface::class);
-        $transformer->transform(Argument::exact('data'))->willThrow(\Exception::class);
+        $transformer = $this->createStub(TransformerInterface::class);
+        $transformer->method('transform')->willThrowException(new \Exception());
 
         $record = [];
 
-        $dataTransformer = new DataTransformer('field', $visitor->reveal(), [$transformer->reveal()], false);
+        $dataTransformer = new DataTransformer('field', $visitor, [$transformer], false);
 
         $this->expectException(TransformerException::class);
         $dataTransformer->transform($record);
     }
 
-    public function testTransformExceptionStrict()
+    public function testTransformExceptionStrict(): void
     {
-        $visitor = $this->prophesize(LoggerVisitorInterface::class);
-        $visitor->has(Argument::any(), Argument::exact('field'))->shouldBeCalledOnce()->willReturn(true);
-        $visitor->get(Argument::any(), Argument::exact('field'))->shouldBeCalledOnce()->willReturn('data');
-        $visitor->set(Argument::any(), Argument::exact('field'), Argument::exact(null))->shouldBeCalledOnce();
+        $visitor = $this->createMock(LoggerVisitorInterface::class);
+        $visitor->expects($this->once())->method('has')->willReturn(true);
+        $visitor->expects($this->once())->method('get')->willReturn('data');
+        $visitor->expects($this->once())->method('set')->with($this->anything(), 'field', null);
 
-        $transformer = $this->prophesize(TransformerInterface::class);
-        $transformer->transform(Argument::exact('data'))->willThrow(\Exception::class);
+        $transformer = $this->createStub(TransformerInterface::class);
+        $transformer->method('transform')->willThrowException(new \Exception());
 
         $record = [];
 
-        $dataTransformer = new DataTransformer('field', $visitor->reveal(), [$transformer->reveal()], true);
+        $dataTransformer = new DataTransformer('field', $visitor, [$transformer], true);
 
         $this->expectException(TransformerException::class);
         $dataTransformer->transform($record);

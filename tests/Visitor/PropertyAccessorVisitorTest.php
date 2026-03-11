@@ -7,16 +7,12 @@ namespace Aubes\ShadowLoggerBundle\Tests\Visitor;
 use Aubes\ShadowLoggerBundle\Logger\TransformerException;
 use Aubes\ShadowLoggerBundle\Visitor\PropertyAccessorVisitor;
 use PHPUnit\Framework\TestCase;
-use Prophecy\Argument;
-use Prophecy\PhpUnit\ProphecyTrait;
 use Symfony\Component\PropertyAccess\PropertyAccessorBuilder;
 use Symfony\Component\PropertyAccess\PropertyAccessorInterface;
 
 class PropertyAccessorVisitorTest extends TestCase
 {
-    use ProphecyTrait;
-
-    public function testFieldExist()
+    public function testFieldExist(): void
     {
         $visitor = new PropertyAccessorVisitor((new PropertyAccessorBuilder())->getPropertyAccessor());
 
@@ -29,7 +25,7 @@ class PropertyAccessorVisitorTest extends TestCase
         $this->assertSame('data-change', $visitor->get($record, '[field]'));
     }
 
-    public function testFieldNotExist()
+    public function testFieldNotExist(): void
     {
         $visitor = new PropertyAccessorVisitor((new PropertyAccessorBuilder())->getPropertyAccessor());
 
@@ -38,24 +34,24 @@ class PropertyAccessorVisitorTest extends TestCase
         $this->assertFalse($visitor->has($record, '[field]'));
     }
 
-    public function testGetException()
+    public function testGetException(): void
     {
-        $accessor = $this->prophesize(PropertyAccessorInterface::class);
-        $accessor->getValue(Argument::any(), Argument::any())->willThrow(\RuntimeException::class);
+        $accessor = $this->createStub(PropertyAccessorInterface::class);
+        $accessor->method('getValue')->willThrowException(new \RuntimeException());
 
-        $visitor = new PropertyAccessorVisitor($accessor->reveal());
+        $visitor = new PropertyAccessorVisitor($accessor);
 
         $record = [];
 
         $this->assertFalse($visitor->has($record, '[field]'));
     }
 
-    public function testSetException()
+    public function testSetException(): void
     {
-        $accessor = $this->prophesize(PropertyAccessorInterface::class);
-        $accessor->setValue(Argument::any(), Argument::any(), Argument::any())->willThrow(\RuntimeException::class);
+        $accessor = $this->createStub(PropertyAccessorInterface::class);
+        $accessor->method('setValue')->willThrowException(new \RuntimeException());
 
-        $visitor = new PropertyAccessorVisitor($accessor->reveal());
+        $visitor = new PropertyAccessorVisitor($accessor);
 
         $record = [];
 

@@ -6,7 +6,7 @@ namespace Aubes\ShadowLoggerBundle\Logger;
 
 trait ShadowProcessorTrait
 {
-    /** @var array<array-key, array<DataTransformer>> */
+    /** @var array<string, list<DataTransformer>> */
     protected array $mapping = [];
 
     public function __construct(protected readonly bool $debug)
@@ -22,10 +22,12 @@ trait ShadowProcessorTrait
         $this->mapping[$property][] = $dataTransformer;
     }
 
+    /** @param list<DataTransformer> $dataTransformers */
     protected function applyTransformers(array $dataTransformers, array &$data, string $property): void
     {
         foreach ($dataTransformers as $dataTransformer) {
             try {
+                /** @psalm-suppress MixedArgument */
                 $dataTransformer->transform($data[$property]);
             } catch (TransformerException $e) {
                 if ($this->debug) {
@@ -35,6 +37,7 @@ trait ShadowProcessorTrait
                         'message' => $e->getMessage(),
                     ];
 
+                    /** @psalm-suppress MixedArrayAssignment */
                     $data['extra']['shadow-debug'] = $debug;
                 }
             }

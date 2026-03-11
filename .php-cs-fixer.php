@@ -13,6 +13,9 @@ return (new PhpCsFixer\Config())
         [
             '@Symfony' => true,
             '@Symfony:risky' => true,
+            '@PHP81Migration' => true,
+            '@PHP8x1Migration:risky' => true,
+            '@PHPUnit100Migration:risky' => true,
 
             'concat_space' => ['spacing' => 'one'],
             'native_function_invocation' => ['include' => ['@internal', 'str_start_with', 'str_contains']],

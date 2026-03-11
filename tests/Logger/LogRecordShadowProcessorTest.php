@@ -6,31 +6,23 @@ namespace Aubes\ShadowLoggerBundle\Tests\Logger;
 
 use Aubes\ShadowLoggerBundle\Logger\DataTransformer;
 use Aubes\ShadowLoggerBundle\Logger\LogRecordShadowProcessor;
-use Aubes\ShadowLoggerBundle\Logger\TransformerException;
+use Aubes\ShadowLoggerBundle\Transformer\TransformerInterface;
+use Aubes\ShadowLoggerBundle\Visitor\LoggerVisitorInterface;
 use Monolog\Level;
 use Monolog\LogRecord;
 use PHPUnit\Framework\TestCase;
-use Prophecy\Argument;
-use Prophecy\PhpUnit\ProphecyTrait;
 
 class LogRecordShadowProcessorTest extends TestCase
 {
-    use ProphecyTrait;
-
-    public function testProcessor()
+    public function testProcessor(): void
     {
-        if (!\class_exists(LogRecord::class)) {
-            $this->addToAssertionCount(1);
-
-            return;
-        }
-
         $processor = new LogRecordShadowProcessor(false);
 
-        $dataTransformer = $this->prophesize(DataTransformer::class);
-        $dataTransformer->transform(Argument::any());
+        $visitor = $this->createStub(LoggerVisitorInterface::class);
+        $visitor->method('has')->willReturn(false);
 
-        $processor->addDataTransformer('context', $dataTransformer->reveal());
+        $dataTransformer = new DataTransformer('field', $visitor, [], true);
+        $processor->addDataTransformer('context', $dataTransformer);
 
         $record = new LogRecord(new \DateTimeImmutable(), 'app', Level::Info, 'message');
 
@@ -39,22 +31,19 @@ class LogRecordShadowProcessorTest extends TestCase
         $this->assertSame([], $record->extra);
     }
 
-    public function testProcessorDebug()
+    public function testProcessorDebug(): void
     {
-        if (!\class_exists(LogRecord::class)) {
-            $this->addToAssertionCount(1);
-
-            return;
-        }
-
         $processor = new LogRecordShadowProcessor(true);
 
-        $exception = new TransformerException('field', 'Message');
+        $visitor = $this->createStub(LoggerVisitorInterface::class);
+        $visitor->method('has')->willReturn(true);
+        $visitor->method('get')->willReturn('data');
 
-        $dataTransformer = $this->prophesize(DataTransformer::class);
-        $dataTransformer->transform(Argument::any())->willThrow($exception);
+        $innerTransformer = $this->createStub(TransformerInterface::class);
+        $innerTransformer->method('transform')->willThrowException(new \Exception('Message'));
 
-        $processor->addDataTransformer('context', $dataTransformer->reveal());
+        $dataTransformer = new DataTransformer('field', $visitor, [$innerTransformer], true);
+        $processor->addDataTransformer('context', $dataTransformer);
 
         $record = new LogRecord(new \DateTimeImmutable(), 'app', Level::Info, 'message');
         $record = $processor($record);

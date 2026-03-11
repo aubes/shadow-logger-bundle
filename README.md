@@ -9,8 +9,8 @@ It allows IP anonymization, hashing, encryption, or removal of sensitive fields 
 ## Requirements
 
 - PHP >= 8.1
-- Symfony 6, 7 or 8
-- Monolog 2 or 3
+- Symfony >=6.1, 7, 8
+- Monolog 3
 
 ## Installation
 
