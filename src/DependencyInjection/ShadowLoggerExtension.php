@@ -67,6 +67,9 @@ final class ShadowLoggerExtension extends Extension
         $this->loadTransformers($config, $container, $processor);
     }
 
+    /**
+     * @SuppressWarnings(PMD.ElseExpression)
+     */
     public function loadEncryptor(array $config, ContainerBuilder $container): void
     {
         if (!isset($config['encryptor']) || ($config['encryptor']['service'] === null && $config['encryptor']['key'] === null)) {
