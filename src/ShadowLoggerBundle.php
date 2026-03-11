@@ -28,6 +28,7 @@ final class ShadowLoggerBundle extends AbstractBundle
     /**
      * @psalm-suppress PossiblyUndefinedMethod
      * @psalm-suppress MixedMethodCall
+     * @psalm-suppress UndefinedMethod
      */
     public function configure(DefinitionConfigurator $definition): void
     {
