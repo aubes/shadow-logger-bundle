@@ -18,7 +18,7 @@ class StringTransformerTest extends TestCase
         $this->assertSame('123', $transformer->transform(123));
         $this->assertSame('1.23', $transformer->transform(1.23));
         $this->assertSame('1', $transformer->transform(true));
-        $this->assertSame('Stringable, I am', $transformer->transform(new class() {
+        $this->assertSame('Stringable, I am', $transformer->transform(new class {
             public function __toString()
             {
                 return 'Stringable, I am';

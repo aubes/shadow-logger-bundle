@@ -7,13 +7,10 @@ namespace Aubes\ShadowLoggerBundle\Visitor;
 use Aubes\ShadowLoggerBundle\Logger\TransformerException;
 use Symfony\Component\PropertyAccess\PropertyAccessorInterface;
 
-class PropertyAccessorVisitor implements LoggerVisitorInterface
+final class PropertyAccessorVisitor implements LoggerVisitorInterface
 {
-    protected PropertyAccessorInterface $accessor;
-
-    public function __construct(PropertyAccessorInterface $accessor)
+    public function __construct(private readonly PropertyAccessorInterface $accessor)
     {
-        $this->accessor = $accessor;
     }
 
     public function has(array $record, string $field): bool
@@ -25,10 +22,7 @@ class PropertyAccessorVisitor implements LoggerVisitorInterface
         }
     }
 
-    /**
-     * @return mixed
-     */
-    public function get(array $record, string $field)
+    public function get(array $record, string $field): mixed
     {
         return $this->accessor->getValue($record, $field);
     }
@@ -36,7 +30,7 @@ class PropertyAccessorVisitor implements LoggerVisitorInterface
     /**
      * @psalm-suppress ReferenceConstraintViolation
      */
-    public function set(array &$record, string $field, $value): void
+    public function set(array &$record, string $field, mixed $value): void
     {
         try {
             $this->accessor->setValue($record, $field, $value);

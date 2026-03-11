@@ -2,9 +2,15 @@
 
 ![CI](https://github.com/aubes/shadow-logger-bundle/actions/workflows/php.yml/badge.svg)
 
-This Symfony bundle provides a monolog processor to transform log data, in order to respect GDPR or to anonymize sensitive data.
+This Symfony bundle provides a Monolog processor to transform log data in order to respect GDPR or anonymize sensitive data.
 
-It allows Ip anonymization, encoding or removing data in the log.
+It allows IP anonymization, hashing, encryption, or removal of sensitive fields in logs.
+
+## Requirements
+
+- PHP >= 8.1
+- Symfony 6, 7 or 8
+- Monolog 2 or 3
 
 ## Installation
 
@@ -14,91 +20,112 @@ composer require aubes/shadow-logger-bundle
 
 ## Configuration
 
-The configuration looks as follows :
-
 ```yaml
 # config/packages/shadow-logger.yaml
 shadow_logger:
-    # If enabled, add "shadow-debug" on "extra" with debug information when exception occurred
-    debug:  '%kernel.debug%'
+    # Add "shadow-debug" in "extra" when a transformer throws an exception.
+    # Recommended to use '%kernel.debug%' so it is only active in development.
+    debug: '%kernel.debug%'
 
-    # If enabled, remove value when exception occurred
+    # When a transformer throws an exception:
+    #   true  → the field value is set to null
+    #   false → the original (untransformed) value is kept
     strict: true
 
-    # Register ShadowProcessor on channels or handlers, not both
-    # To configure channels or handlers is recommended for performance reason
-    # Logging channels the ShadowProcessor should be pushed to
+    # Register ShadowProcessor on handlers OR channels (not both).
+    # Scoping to specific handlers/channels is recommended for performance.
     handlers: ['app']
-
-    # Logging handlers the ShadowProcessor should be pushed to
     #channels: ['app']
 
+    # Salt used by the "hash" transformer (see Hash transformer section).
     encoder:
         salt: '%env(SHADOW_LOGGER_ENCODER_SALT)%'
-    
-    mapping:
-        # Context fields
-        context:
-            custom_field: [] # Array of Transformer aliases
 
-            # Examples:
-            user_ip: ['ip']
-            user_name: ['hash']
+    mapping:
+        # Fields to transform in the log "context"
+        context:
+            user_ip:        ['ip']
+            user_name:      ['hash']
             user_birthdate: ['remove']
 
-        # Extra fields
+        # Fields to transform in the log "extra"
         extra:
-            custom_field: [] # Array of Transformer aliases
+            custom_field: ['remove']
 ```
 
-### Mapping
+## Choosing between hashing and encryption
 
-Field name could contain dot to dive into array.
+Both the `hash` and `encrypt` transformers protect sensitive data in logs, but they serve different purposes. Choosing the right one depends on what you need to do with the data after it is logged.
 
-For example, if 'extra' contains the array :
+### Hashing (`hash`)
 
-```php
-'user' => [
-    'id' => /* ... */,
-    'name' => [
-        'first' => /* ... */,
-        'last' => /* ... */,
-    ],
-]
-```
+Hashing is a **one-way, irreversible** operation. The original value cannot be recovered from the hash.
 
-It is possible to modify `ip` and `name` fields  :
+**Use it when:**
+- You do not need to read back the original value
+- You want to correlate log entries belonging to the same user (e.g. trace a user across multiple requests) without storing their identity — the same input always produces the same hash
+- You want to pseudonymize data in compliance with GDPR
+
+**Limitations:**
+- If the space of possible values is small (e.g. an IP address), an attacker with access to the logs could reconstruct the original values through brute force
+- The salt must be kept secret; rotating it means previously hashed values can no longer be correlated with new ones
+- You cannot fulfill a GDPR "right of access" request using only the hashed value
+
+**Configuration:**
 
 ```yaml
-# config/packages/shadow-logger.yaml
 shadow_logger:
-    mapping:
-        extra:
-            user.ip: ['ip']
-            user.name.first: ['hash']
-            user.name.last: ['remove']
+    encoder:
+        algo:   'sha256'  # any algorithm from hash_algos()
+        salt:   '%env(SHADOW_LOGGER_ENCODER_SALT)%'
+        binary: false
 ```
 
-Warning, it is better to use field name without dot for performance.
-Internally, when a field name contains a dot the PropertyAccessor is used instead of a simple array key access.
+> Always configure a `salt` to prevent rainbow table attacks. Store it as a secret environment variable.
 
-## Transformer
+### Encryption (`encrypt`)
 
-Currently, this bundle provides these transformers :
- * **ip**: Anonymize IP v4 or v6 (cf: `Symfony\Component\HttpFoundation\IpUtils::anonymize`)
- * **hash**: Encode the value using [hash](https://www.php.net/manual/fr/function.hash.php) function
- * **string**: Cast a `scalar` into `string` or call `__toString` on object
- * **remove**: Remove value (replaced by `--obfuscated--`)
- * **encrypt**: Encrypt the value (available only if encryptor is configured, cf: [Encrypt transformer](#encrypt-transformer))
+Encryption is a **reversible** operation. The original value can be recovered using the key and the IV stored alongside it.
 
-### Chain transformers
+**Use it when:**
+- You may need to read back the original value later (e.g. to respond to a GDPR right of access or right of erasure request, or to debug a production issue with proper authorization)
+- You want to store sensitive data in logs in a protected form without losing it permanently
 
-You can chain transformers, for example to encode a "Stringable" object :
+**Limitations:**
+- Requires secure key management: if the key is compromised, all encrypted log entries are exposed
+- Key rotation is complex: old entries encrypted with a previous key can no longer be decrypted with the new one
+- The presence of the IV in the log reveals that the original field was non-empty, which may itself be sensitive
+- More computationally expensive than hashing
+
+### Quick comparison
+
+| | `hash` | `encrypt` | `remove` |
+|---|---|---|---|
+| Reversible | No | Yes (with key) | No |
+| Correlate entries | Yes (same input → same output) | No (IV is random) | No |
+| Protect against brute force | With a strong salt | Yes | Yes |
+| GDPR right of access | No | Yes | No |
+| Key management required | Salt only | Key + IV | None |
+
+## Transformers
+
+The following transformers are available out of the box:
+
+| Alias | Description |
+|-------|-------------|
+| `ip` | Anonymizes an IPv4 or IPv6 address |
+| `hash` | Hashes the value using the configured algorithm |
+| `string` | Casts a scalar or `Stringable` object to string |
+| `remove` | Replaces the value with `--obfuscated--` |
+| `encrypt` | Encrypts the value (requires encryptor configuration) |
+| `truncate` | Masks the middle of a value, keeping start and/or end visible (requires truncator configuration) |
+
+### Chaining transformers
+
+Transformers can be chained. They are applied in order, the output of one becoming the input of the next. For example, to hash a `Stringable` object:
 
 ```yaml
-# config/packages/shadow-logger.yaml
 shadow_logger:
-    # [...]
     mapping:
         context:
             custom_field: ['string', 'hash']
@@ -106,24 +133,26 @@ shadow_logger:
 
 ### Hash transformer
 
-Encoder configuration :
-
-```yaml
-# config/packages/shadow-logger.yaml
-shadow_logger:
-    # [...]
-    encoder:
-        algo: 'sha256' # cf: https://www.php.net/manual/fr/function.hash-algos.php
-        salt: '%env(SHADOW_LOGGER_ENCODER_SALT)%'
-        binary: false
-```
+The `hash` transformer uses the configured encoder. See the [Hashing section](#hashing-hash) above for configuration options.
 
 ### Encrypt transformer
 
-The bundle does not provide an encryption class.  
-To use the "encrypt" transformer, you need to manually configure the encryptor.
+The `encrypt` transformer supports two modes: a built-in encryptor based on OpenSSL, or a custom implementation.
 
-First, you need to create an Adapter class and extends [EncryptorInterface](src/Encryptor/EncryptorInterface.php) :
+#### Built-in encryptor
+
+```yaml
+shadow_logger:
+    encryptor:
+        key:    '%env(SHADOW_LOGGER_ENCRYPTOR_KEY)%'
+        cipher: 'aes-256-cbc' # optional, default: aes-256-cbc
+```
+
+The key must be kept secret and should be provided via an environment variable. The cipher can be any algorithm supported by OpenSSL (`openssl_get_cipher_methods()`).
+
+#### Custom encryptor
+
+If you need a different encryption strategy, implement [`EncryptorInterface`](src/Encryptor/EncryptorInterface.php):
 
 ```php
 // src/Encryptor/EncryptorAdapter.php
@@ -133,25 +162,21 @@ use Aubes\ShadowLoggerBundle\Encryptor\EncryptorInterface;
 
 class EncryptorAdapter implements EncryptorInterface
 {
-    // [...]
-
     public function encrypt(string $data, string $iv): string
     {
-        // [...]
-
+        // your encryption logic
         return $encryptedValue;
     }
 
     public function generateIv(): string
     {
-        // [...]
-
+        // generate a random IV
         return $iv;
     }
 }
 ```
 
-Next, register your class as a service (if service discovery is not used):
+Register it as a service (if not using autoconfiguration):
 
 ```yaml
 # config/services.yaml
@@ -159,44 +184,114 @@ services:
     App\Encryptor\EncryptorAdapter: ~
 ```
 
-Finally, configure your service Id in the ShadowLoggerBundle :
+Then reference it by its service ID:
 
 ```yaml
-# config/packages/shadow-logger.yaml
 shadow_logger:
-    # [...]
     encryptor: 'App\Encryptor\EncryptorAdapter'
 ```
 
-This transformer replaces the value with an array :
+#### Output format
+
+In both cases, the transformer replaces the field value with:
 
 ```php
 [
-    'iv' => , // Random IV used to encrypt the value
-    'value' => , // Encrypted value
+    'iv'    => 'abc123', // base64-encoded IV used during encryption
+    'value' => '...',    // encrypted value
 ]
 ```
 
+### Truncate transformer
+
+The `truncate` transformer masks the middle of a value while keeping a configurable number of characters visible at the start and/or end. It is useful for partially revealing values like card numbers, email addresses, or tokens.
+
+Named variants are declared under `truncators`. Each variant becomes available as a transformer alias: `default` → `truncate`, others → `truncate_{name}`.
+
+```yaml
+shadow_logger:
+    truncators:
+        default:            # alias: "truncate"
+            keep_start: 2
+            keep_end:   2
+            mask:       '***'
+        card:               # alias: "truncate_card"
+            keep_start: 4
+            keep_end:   4
+            mask:       '****'
+        email:              # alias: "truncate_email"
+            keep_start: 1
+            keep_end:   0
+            mask:       '***'
+
+    mapping:
+        context:
+            card_number: ['truncate_card']    # 4242424242424242 → 4242****4242
+            email:       ['truncate_email']   # john@example.com → j***
+            token:       ['truncate']         # abcdef1234 → ab***34
+```
+
+| Option | Description | Default |
+|--------|-------------|---------|
+| `keep_start` | Number of characters to keep at the beginning | `2` |
+| `keep_end` | Number of characters to keep at the end | `2` |
+| `mask` | String used to replace the hidden part | `***` |
+
+> If the value is shorter than or equal to `keep_start + keep_end`, it is replaced entirely by the mask.
+
+## Mapping
+
+### Nested fields
+
+Field names can use dot notation to target nested array keys.
+
+Given the following `extra` structure:
+
+```php
+'user' => [
+    'id'   => 42,
+    'name' => [
+        'first' => 'John',
+        'last'  => 'Doe',
+    ],
+    'ip'   => '1.2.3.4',
+]
+```
+
+You can map nested fields like this:
+
+```yaml
+shadow_logger:
+    mapping:
+        extra:
+            user.ip:         ['ip']
+            user.name.first: ['hash']
+            user.name.last:  ['remove']
+```
+
+> **Note:** Dot notation uses the Symfony PropertyAccessor internally, which is slower than direct key access. Prefer flat field names when possible.
+
 ## Custom transformer
 
-First you need to create a Transformer class and extends [TransformerInterface](src/Transformer/TransformerInterface.php) :
+Implement [`TransformerInterface`](src/Transformer/TransformerInterface.php):
 
 ```php
 // src/Transformer/CustomTransformer.php
 namespace App\Transformer;
 
+use Aubes\ShadowLoggerBundle\Transformer\TransformerInterface;
+
 class CustomTransformer implements TransformerInterface
 {
-    public function transform($data)
+    public function transform(mixed $data): mixed
     {
-        // [...]
-    
-        return $value;
+        // transform and return the value
+        return $data;
     }
 }
 ```
 
-Next, register your class as a service with 'shadow_logger.transformer' tag :
+Register it as a service with the `shadow_logger.transformer` tag and an `alias`:
 
 ```yaml
 # config/services.yaml
@@ -204,4 +299,13 @@ services:
     App\Transformer\CustomTransformer:
         tags:
             - { name: 'shadow_logger.transformer', alias: 'custom' }
+```
+
+The `alias` is the name used in the `mapping` configuration:
+
+```yaml
+shadow_logger:
+    mapping:
+        context:
+            some_field: ['custom']
 ```

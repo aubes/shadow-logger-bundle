@@ -31,13 +31,25 @@ class EncryptTransformerTest extends TestCase
         $this->assertSame('encrypted', $result['value']);
     }
 
-    public function testTransformEmpty()
+    public function testTransformNull()
     {
         $encryptor = $this->prophesize(EncryptorInterface::class);
 
         $transformer = new EncryptTransformer($encryptor->reveal());
-        $this->assertSame([], $transformer->transform(''));
         $this->assertSame([], $transformer->transform(null));
+    }
+
+    public function testTransformEmptyString()
+    {
+        $encryptor = $this->prophesize(EncryptorInterface::class);
+        $encryptor->generateIv()->willReturn('initialVector');
+        $encryptor->encrypt('', 'initialVector')->willReturn('encrypted');
+
+        $transformer = new EncryptTransformer($encryptor->reveal());
+        $result = $transformer->transform('');
+
+        $this->assertSame('initialVector', $result['iv']);
+        $this->assertSame('encrypted', $result['value']);
     }
 
     public function testTransformNotScalar()

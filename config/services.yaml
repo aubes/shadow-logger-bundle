@@ -24,6 +24,11 @@ services:
         tags:
             - { name: 'shadow_logger.transformer', alias: 'string' }
 
+    Aubes\ShadowLoggerBundle\Encryptor\DefaultEncryptor:
+        arguments:
+            $key:    ''
+            $cipher: 'aes-256-cbc'
+
     Aubes\ShadowLoggerBundle\Visitor\ArrayKeyVisitor: ~
     Aubes\ShadowLoggerBundle\Visitor\PropertyAccessorVisitor:
         arguments:

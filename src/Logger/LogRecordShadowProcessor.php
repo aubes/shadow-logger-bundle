@@ -9,7 +9,7 @@ use Monolog\LogRecord;
 /**
  * Logger processor for Monolog 3.
  */
-class LogRecordShadowProcessor
+final class LogRecordShadowProcessor
 {
     use ShadowProcessorTrait;
 
@@ -24,6 +24,10 @@ class LogRecordShadowProcessor
             $data[$property] = $record[$property];
 
             $this->applyTransformers($dataTransformers, $data, $property);
+        }
+
+        if (isset($data['extra']) && !isset($this->mapping['extra'])) {
+            $data['extra'] = \array_merge((array) $record['extra'], $data['extra']);
         }
 
         return $record->with(...$data);
