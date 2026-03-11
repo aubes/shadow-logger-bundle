@@ -4,21 +4,16 @@ declare(strict_types=1);
 
 namespace Aubes\ShadowLoggerBundle\Encoder;
 
-class Encoder implements EncoderInterface
+final class Encoder implements EncoderInterface
 {
-    protected string $algo;
-    protected string $salt;
-    protected bool $binary;
-
-    public function __construct(string $algo = 'sha256', string $salt = '', bool $binary = false)
-    {
+    public function __construct(
+        private readonly string $algo = 'sha256',
+        private readonly string $salt = '',
+        private readonly bool $binary = false,
+    ) {
         if (!\in_array($algo, \hash_algos())) {
             throw new \InvalidArgumentException('Invalid algo');
         }
-
-        $this->algo = $algo;
-        $this->salt = $salt;
-        $this->binary = $binary;
     }
 
     public function hash(string $data): string

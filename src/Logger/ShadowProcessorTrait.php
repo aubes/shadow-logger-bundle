@@ -6,14 +6,11 @@ namespace Aubes\ShadowLoggerBundle\Logger;
 
 trait ShadowProcessorTrait
 {
-    protected bool $debug;
-
     /** @var array<array-key, array<DataTransformer>> */
     protected array $mapping = [];
 
-    public function __construct(bool $debug)
+    public function __construct(protected readonly bool $debug)
     {
-        $this->debug = $debug;
     }
 
     public function addDataTransformer(string $property, DataTransformer $dataTransformer): void

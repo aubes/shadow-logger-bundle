@@ -6,18 +6,15 @@ namespace Aubes\ShadowLoggerBundle\Transformer;
 
 use Aubes\ShadowLoggerBundle\Encryptor\EncryptorInterface;
 
-class EncryptTransformer implements TransformerInterface
+final class EncryptTransformer implements TransformerInterface
 {
-    protected EncryptorInterface $encryptor;
-
-    public function __construct(EncryptorInterface $encryptor)
+    public function __construct(private readonly EncryptorInterface $encryptor)
     {
-        $this->encryptor = $encryptor;
     }
 
-    public function transform($data): array
+    public function transform(mixed $data): array
     {
-        if (empty($data)) {
+        if ($data === null) {
             return [];
         }
 

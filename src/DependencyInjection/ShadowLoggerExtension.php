@@ -5,10 +5,13 @@ declare(strict_types=1);
 namespace Aubes\ShadowLoggerBundle\DependencyInjection;
 
 use Aubes\ShadowLoggerBundle\Encoder\Encoder;
+use Aubes\ShadowLoggerBundle\Encryptor\DefaultEncryptor;
 use Aubes\ShadowLoggerBundle\Logger\DataTransformer;
 use Aubes\ShadowLoggerBundle\Logger\LogRecordShadowProcessor;
 use Aubes\ShadowLoggerBundle\Logger\ShadowProcessor;
 use Aubes\ShadowLoggerBundle\Transformer\EncryptTransformer;
+use Aubes\ShadowLoggerBundle\Transformer\TruncateTransformer;
+use Aubes\ShadowLoggerBundle\Truncator\Truncator;
 use Aubes\ShadowLoggerBundle\Visitor\ArrayKeyVisitor;
 use Aubes\ShadowLoggerBundle\Visitor\PropertyAccessorVisitor;
 use Monolog\LogRecord;
@@ -22,11 +25,8 @@ use Symfony\Component\HttpKernel\DependencyInjection\Extension;
 /**
  * @SuppressWarnings(PMD.CouplingBetweenObjects)
  */
-class ShadowLoggerExtension extends Extension
+final class ShadowLoggerExtension extends Extension
 {
-    /**
-     * {@inheritdoc}
-     */
     public function load(array $configs, ContainerBuilder $container): void
     {
         $configuration = new Configuration();
@@ -37,6 +37,7 @@ class ShadowLoggerExtension extends Extension
 
         $this->loadEncoder($config, $container);
         $this->loadEncryptor($config, $container);
+        $this->loadTruncators($config, $container);
         $this->loadProcessor($config, $container);
     }
 
@@ -68,14 +69,26 @@ class ShadowLoggerExtension extends Extension
 
     public function loadEncryptor(array $config, ContainerBuilder $container): void
     {
-        if (!isset($config['encryptor'])) {
+        if (!isset($config['encryptor']) || ($config['encryptor']['service'] === null && $config['encryptor']['key'] === null)) {
             $container->removeDefinition(EncryptTransformer::class);
+            $container->removeDefinition(DefaultEncryptor::class);
 
             return;
         }
 
         $encryptTransformer = $container->getDefinition(EncryptTransformer::class);
-        $encryptTransformer->setArgument('$encryptor', new Reference($config['encryptor']));
+
+        if ($config['encryptor']['service'] !== null) {
+            $encryptorRef = new Reference($config['encryptor']['service']);
+        } else {
+            $container->getDefinition(DefaultEncryptor::class)
+                ->setArgument('$key', $config['encryptor']['key'])
+                ->setArgument('$cipher', $config['encryptor']['cipher']);
+
+            $encryptorRef = new Reference(DefaultEncryptor::class);
+        }
+
+        $encryptTransformer->setArgument('$encryptor', $encryptorRef);
     }
 
     /**
@@ -128,6 +141,27 @@ class ShadowLoggerExtension extends Extension
         }
     }
 
+    protected function loadTruncators(array $config, ContainerBuilder $container): void
+    {
+        foreach ($config['truncators'] as $name => $truncatorConfig) {
+            $alias = $name === 'default' ? 'truncate' : 'truncate_' . $name;
+
+            $truncatorId = 'shadow_logger.truncator.' . $name;
+            $transformerId = 'shadow_logger.truncate_transformer.' . $name;
+
+            $container->register($truncatorId, Truncator::class)
+                ->setArguments([
+                    $truncatorConfig['keep_start'],
+                    $truncatorConfig['keep_end'],
+                    $truncatorConfig['mask'],
+                ]);
+
+            $container->register($transformerId, TruncateTransformer::class)
+                ->setArgument('$truncator', new Reference($truncatorId))
+                ->addTag('shadow_logger.transformer', ['alias' => $alias]);
+        }
+    }
+
     protected function loadEncoder(array $config, ContainerBuilder $container): void
     {
         if (empty($config['encoder'])) {
@@ -135,9 +169,9 @@ class ShadowLoggerExtension extends Extension
         }
 
         $encoder = $container->getDefinition(Encoder::class);
-        $encoder->setArgument('$algo', $config['algo']);
-        $encoder->setArgument('$salt', $config['salt']);
-        $encoder->setArgument('$binary', $config['binary']);
+        $encoder->setArgument('$algo', $config['encoder']['algo']);
+        $encoder->setArgument('$salt', $config['encoder']['salt']);
+        $encoder->setArgument('$binary', $config['encoder']['binary']);
     }
 
     protected function propertyAccessorArray(string $path): string

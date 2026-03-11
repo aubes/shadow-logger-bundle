@@ -7,7 +7,7 @@ namespace Aubes\ShadowLoggerBundle\Logger;
 /**
  * Logger processor for Monolog 2.
  */
-class ShadowProcessor
+final class ShadowProcessor
 {
     use ShadowProcessorTrait;
 

@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace Aubes\ShadowLoggerBundle\Transformer;
 
-class StringTransformer implements TransformerInterface
+final class StringTransformer implements TransformerInterface
 {
-    public function transform($data): string
+    public function transform(mixed $data): string
     {
-        if (empty($data)) {
+        if ($data === null) {
             return '';
         }
 

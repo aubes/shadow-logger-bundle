@@ -6,6 +6,6 @@ namespace Aubes\ShadowLoggerBundle;
 
 use Symfony\Component\HttpKernel\Bundle\Bundle;
 
-class ShadowLoggerBundle extends Bundle
+final class ShadowLoggerBundle extends Bundle
 {
 }

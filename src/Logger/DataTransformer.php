@@ -8,17 +8,12 @@ use Aubes\ShadowLoggerBundle\Visitor\LoggerVisitorInterface;
 
 class DataTransformer
 {
-    protected string $field;
-    protected LoggerVisitorInterface $visitor;
-    protected array $transformers = [];
-    protected bool $strict;
-
-    public function __construct(string $field, LoggerVisitorInterface $visitor, array $transformers, bool $strict)
-    {
-        $this->field = $field;
-        $this->visitor = $visitor;
-        $this->transformers = $transformers;
-        $this->strict = $strict;
+    public function __construct(
+        private readonly string $field,
+        private readonly LoggerVisitorInterface $visitor,
+        private readonly array $transformers,
+        private readonly bool $strict,
+    ) {
     }
 
     public function transform(array &$record): void

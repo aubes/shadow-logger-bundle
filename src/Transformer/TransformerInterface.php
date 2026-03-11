@@ -7,9 +7,7 @@ namespace Aubes\ShadowLoggerBundle\Transformer;
 interface TransformerInterface
 {
     /**
-     * @param mixed $data
-     *
      * @return array|scalar
      */
-    public function transform($data);
+    public function transform(mixed $data): mixed;
 }

@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace Aubes\ShadowLoggerBundle\Transformer;
 
-use Aubes\ShadowLoggerBundle\Encoder\EncoderInterface;
+use Aubes\ShadowLoggerBundle\Truncator\TruncatorInterface;
 
-final class HashTransformer implements TransformerInterface
+final class TruncateTransformer implements TransformerInterface
 {
-    public function __construct(private readonly EncoderInterface $encoder)
+    public function __construct(private readonly TruncatorInterface $truncator)
     {
     }
 
@@ -22,6 +22,6 @@ final class HashTransformer implements TransformerInterface
             throw new \InvalidArgumentException('Data must be scalar');
         }
 
-        return $this->encoder->hash((string) $data);
+        return $this->truncator->truncate((string) $data);
     }
 }

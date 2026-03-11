@@ -8,13 +8,7 @@ interface LoggerVisitorInterface
 {
     public function has(array $record, string $field): bool;
 
-    /**
-     * @return mixed
-     */
-    public function get(array $record, string $field);
+    public function get(array $record, string $field): mixed;
 
-    /**
-     * @param mixed $value
-     */
-    public function set(array &$record, string $field, $value): void;
+    public function set(array &$record, string $field, mixed $value): void;
 }
