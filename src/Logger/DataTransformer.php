@@ -18,18 +18,17 @@ final class DataTransformer
     ) {
     }
 
+    /** @psalm-suppress MixedAssignment */
     public function transform(array &$record): void
     {
         if (!$this->visitor->has($record, $this->field)) {
             return;
         }
 
-        /** @var mixed $value */
         $value = $this->visitor->get($record, $this->field);
 
         try {
             foreach ($this->transformers as $transformer) {
-                /** @var mixed $value */
                 $value = $transformer->transform($value);
             }
         } catch (\Exception $e) {

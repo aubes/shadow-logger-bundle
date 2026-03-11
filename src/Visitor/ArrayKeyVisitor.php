@@ -16,9 +16,9 @@ final class ArrayKeyVisitor implements LoggerVisitorInterface
         return $record[$field] ?? '';
     }
 
+    /** @psalm-suppress MixedAssignment */
     public function set(array &$record, string $field, mixed $value): void
     {
-        /** @psalm-suppress MixedAssignment */
         $record[$field] = $value;
     }
 }
