@@ -26,13 +26,21 @@ class HashTransformerTest extends TestCase
         $this->assertSame('encoded', $transformer->transform(true));
     }
 
-    public function testTransformEmpty()
+    public function testTransformNull()
     {
         $encoder = $this->prophesize(EncoderInterface::class);
 
         $transformer = new HashTransformer($encoder->reveal());
-        $this->assertSame('', $transformer->transform(''));
         $this->assertSame('', $transformer->transform(null));
+    }
+
+    public function testTransformEmptyString()
+    {
+        $encoder = $this->prophesize(EncoderInterface::class);
+        $encoder->hash('')->willReturn('encoded');
+
+        $transformer = new HashTransformer($encoder->reveal());
+        $this->assertSame('encoded', $transformer->transform(''));
     }
 
     public function testTransformNotScalar()
