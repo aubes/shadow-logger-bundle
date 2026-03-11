@@ -148,14 +148,16 @@ final class ShadowLoggerBundle extends AbstractBundle
         $encryptTransformer = $builder->getDefinition(EncryptTransformer::class);
 
         if ($config['encryptor']['service'] !== null) {
-            $encryptorRef = new Reference($config['encryptor']['service']);
-        } else {
-            $builder->getDefinition(DefaultEncryptor::class)
-                ->setArgument('$key', $config['encryptor']['key'])
-                ->setArgument('$cipher', $config['encryptor']['cipher']);
+            $encryptTransformer->setArgument('$encryptor', new Reference($config['encryptor']['service']));
 
-            $encryptorRef = new Reference(DefaultEncryptor::class);
+            return;
         }
+
+        $builder->getDefinition(DefaultEncryptor::class)
+            ->setArgument('$key', $config['encryptor']['key'])
+            ->setArgument('$cipher', $config['encryptor']['cipher']);
+
+        $encryptorRef = new Reference(DefaultEncryptor::class);
 
         $encryptTransformer->setArgument('$encryptor', $encryptorRef);
     }
@@ -193,11 +195,10 @@ final class ShadowLoggerBundle extends AbstractBundle
                     $transformers[] = new Reference($transformerIdList[$alias]);
                 }
 
+                $visitor = $builder->getDefinition(ArrayKeyVisitor::class);
                 if (\str_contains($field, '.')) {
                     $visitor = $builder->getDefinition(PropertyAccessorVisitor::class);
                     $field = $this->propertyAccessorArray($field);
-                } else {
-                    $visitor = $builder->getDefinition(ArrayKeyVisitor::class);
                 }
 
                 $dataTransformer = new Definition(DataTransformer::class, [
