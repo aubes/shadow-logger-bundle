@@ -7,20 +7,16 @@ namespace Aubes\ShadowLoggerBundle\Tests\Transformer;
 use Aubes\ShadowLoggerBundle\Encryptor\EncryptorInterface;
 use Aubes\ShadowLoggerBundle\Transformer\EncryptTransformer;
 use PHPUnit\Framework\TestCase;
-use Prophecy\Argument;
-use Prophecy\PhpUnit\ProphecyTrait;
 
 class EncryptTransformerTest extends TestCase
 {
-    use ProphecyTrait;
-
-    public function testTransform()
+    public function testTransform(): void
     {
-        $encryptor = $this->prophesize(EncryptorInterface::class);
-        $encryptor->encrypt(Argument::any(), 'initialVector')->willReturn('encrypted');
-        $encryptor->generateIv()->willReturn('initialVector');
+        $encryptor = $this->createStub(EncryptorInterface::class);
+        $encryptor->method('generateIv')->willReturn('initialVector');
+        $encryptor->method('encrypt')->willReturn('encrypted');
 
-        $transformer = new EncryptTransformer($encryptor->reveal());
+        $transformer = new EncryptTransformer($encryptor);
 
         $result = $transformer->transform('data');
 
@@ -31,32 +27,32 @@ class EncryptTransformerTest extends TestCase
         $this->assertSame('encrypted', $result['value']);
     }
 
-    public function testTransformNull()
+    public function testTransformNull(): void
     {
-        $encryptor = $this->prophesize(EncryptorInterface::class);
+        $encryptor = $this->createStub(EncryptorInterface::class);
 
-        $transformer = new EncryptTransformer($encryptor->reveal());
+        $transformer = new EncryptTransformer($encryptor);
         $this->assertSame([], $transformer->transform(null));
     }
 
-    public function testTransformEmptyString()
+    public function testTransformEmptyString(): void
     {
-        $encryptor = $this->prophesize(EncryptorInterface::class);
-        $encryptor->generateIv()->willReturn('initialVector');
-        $encryptor->encrypt('', 'initialVector')->willReturn('encrypted');
+        $encryptor = $this->createMock(EncryptorInterface::class);
+        $encryptor->method('generateIv')->willReturn('initialVector');
+        $encryptor->expects($this->once())->method('encrypt')->with('', 'initialVector')->willReturn('encrypted');
 
-        $transformer = new EncryptTransformer($encryptor->reveal());
+        $transformer = new EncryptTransformer($encryptor);
         $result = $transformer->transform('');
 
         $this->assertSame('initialVector', $result['iv']);
         $this->assertSame('encrypted', $result['value']);
     }
 
-    public function testTransformNotScalar()
+    public function testTransformNotScalar(): void
     {
-        $encryptor = $this->prophesize(EncryptorInterface::class);
+        $encryptor = $this->createStub(EncryptorInterface::class);
 
-        $transformer = new EncryptTransformer($encryptor->reveal());
+        $transformer = new EncryptTransformer($encryptor);
 
         $this->expectException(\InvalidArgumentException::class);
         $this->assertSame([], $transformer->transform(['data']));

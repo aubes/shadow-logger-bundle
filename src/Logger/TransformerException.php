@@ -6,11 +6,7 @@ namespace Aubes\ShadowLoggerBundle\Logger;
 
 final class TransformerException extends \RuntimeException
 {
-    /**
-     * @param string    $message
-     * @param int|mixed $code
-     */
-    public function __construct(private readonly string $field, $message = '', $code = 0, ?\Throwable $previous = null)
+    public function __construct(private readonly string $field, string $message = '', int $code = 0, ?\Throwable $previous = null)
     {
         parent::__construct($message, $code, $previous);
     }
