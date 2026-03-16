@@ -10,6 +10,10 @@ final class DefaultEncryptor implements EncryptorInterface
         private readonly string $key,
         private readonly string $cipher = 'aes-256-cbc',
     ) {
+        if (\strlen($key) < 16) {
+            throw new \InvalidArgumentException('Encryption key must be at least 16 bytes.');
+        }
+
         if (!\in_array($cipher, \openssl_get_cipher_methods(), true)) {
             throw new \InvalidArgumentException(\sprintf('Invalid cipher "%s".', $cipher));
         }
@@ -28,7 +32,13 @@ final class DefaultEncryptor implements EncryptorInterface
 
     public function encrypt(string $data, string $iv): string
     {
-        $encrypted = \openssl_encrypt($data, $this->cipher, $this->key, 0, \base64_decode($iv));
+        $decodedIv = \base64_decode($iv, true);
+
+        if ($decodedIv === false) {
+            throw new \InvalidArgumentException('Invalid IV: base64 decoding failed.');
+        }
+
+        $encrypted = \openssl_encrypt($data, $this->cipher, $this->key, 0, $decodedIv);
 
         if ($encrypted === false) {
             throw new \RuntimeException('Encryption failed.');
