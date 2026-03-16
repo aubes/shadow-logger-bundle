@@ -9,7 +9,7 @@ use PHPUnit\Framework\TestCase;
 
 class RemoveTransformerTest extends TestCase
 {
-    public function testTransform()
+    public function testTransform(): void
     {
         $transformer = new RemoveTransformer();
         $this->assertSame('--obfuscated--', $transformer->transform('cogito ergo sum'));

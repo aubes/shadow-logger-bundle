@@ -23,7 +23,7 @@ final class DefaultEncryptor implements EncryptorInterface
     {
         $length = \openssl_cipher_iv_length($this->cipher);
 
-        if ($length === false) {
+        if ($length === false || $length < 1) {
             throw new \RuntimeException(\sprintf('Could not determine IV length for cipher "%s".', $this->cipher));
         }
 

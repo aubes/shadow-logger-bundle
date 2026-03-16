@@ -15,6 +15,10 @@ final class LogRecordShadowProcessor
 
     /**
      * @psalm-suppress UndefinedInterfaceMethod
+     * @psalm-suppress MixedArgumentTypeCoercion
+     * @psalm-suppress MixedArgument
+     * @psalm-suppress MixedArrayAccess
+     * @psalm-suppress ArgumentTypeCoercion
      */
     public function __invoke(LogRecord $record): LogRecord
     {
